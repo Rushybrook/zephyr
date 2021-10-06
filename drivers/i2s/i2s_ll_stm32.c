@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(i2s_ll_stm32);
  * #if __DCACHE_PRESENT == 1
  * when cache support is added
  */
-#if 0
+#if 1
 #define DCACHE_INVALIDATE(addr, size) \
 	SCB_InvalidateDCache_by_Addr((uint32_t *)addr, size)
 #define DCACHE_CLEAN(addr, size) \
@@ -225,7 +225,7 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	bit_clk_freq = i2s_cfg->frame_clk_freq *
 		       i2s_cfg->word_size * i2s_cfg->channels;
 
-	ret = i2s_stm32_set_clock(dev, bit_clk_freq);
+	ret = i2s_stm32_set_clock(dev, bit_clk_freq * 8);
 	if (ret < 0) {
 		return ret;
 	}
@@ -533,6 +533,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
+
+	DCACHE_CLEAN(stream->mem_block, stream->cfg.block_size);
 
 	ret = reload_dma(stream->dev_dma, stream->dma_channel,
 			&stream->dma_cfg,
